@@ -4,22 +4,9 @@ import {
   SubmitHandler,
   useFormContext,
 } from "react-hook-form";
-import { TransferAction, StreamAction, CustomAction } from "../../config";
+import { useGovKitContext } from "./GovKitProvider";
 
-// ideally this will come from context provider
-const ACTIONS = [TransferAction, StreamAction, CustomAction];
-
-/**
- * Action types are the top level actions you can select from the UI.
- * Selecting an action will render a form that will help build a transaction.
- */
-const actionTypes = [
-  "one-time-payment",
-  "streaming-payment",
-  "custom-transaction",
-];
-
-export const ActionDialog = ({
+export const GovKitForm = ({
   onSubmit,
   children,
 }: {
@@ -28,10 +15,11 @@ export const ActionDialog = ({
 }) => {
   const methods = useForm<any>();
   const { handleSubmit } = methods;
+  const { actions } = useGovKitContext();
 
   const onFormSubmit: SubmitHandler<any> = async (data) => {
     let action;
-    for (const actionType of ACTIONS) {
+    for (const actionType of actions) {
       if (data.type === actionType.type) {
         action = await actionType.toAction(data);
       }
@@ -47,13 +35,16 @@ export const ActionDialog = ({
 };
 
 /*
-onChange --
-- set default values for the given type
-- clear out the old values for the other types
-- I don't think this matters a whole lot
- */
+  onChange --
+  - set default values for the given type
+  - clear out the old values for the other types
+  - I don't think this matters a whole lot
+   */
 const TypeSelect = ({ className }: { className?: string }) => {
   const { register } = useFormContext();
+  const { actions } = useGovKitContext();
+  const actionTypes = actions.map((action) => action.type);
+
   return (
     <select className={className} {...register("type")}>
       {actionTypes.map((actionType) => (
@@ -66,11 +57,13 @@ const TypeSelect = ({ className }: { className?: string }) => {
 };
 
 const FormBody = () => {
+  const { actions } = useGovKitContext();
   const { watch } = useFormContext();
   const type = watch("type");
+  const actionTypes = actions.map((action) => action.type);
 
   const renderFormForType = (type: string) => {
-    for (const actionType of ACTIONS) {
+    for (const actionType of actions) {
       if (type === actionType.type) {
         const Form = actionType.form;
         return <Form />;
@@ -95,6 +88,6 @@ const Button = ({
   );
 };
 
-ActionDialog.TypeSelect = TypeSelect;
-ActionDialog.FormBody = FormBody;
-ActionDialog.Button = Button;
+GovKitForm.TypeSelect = TypeSelect;
+GovKitForm.FormBody = FormBody;
+GovKitForm.Button = Button;

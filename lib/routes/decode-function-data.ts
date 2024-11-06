@@ -37,11 +37,13 @@ const decodeCalldataWithAbi = ({
 export const useDecodedFunctionData = async ({
   target,
   calldata,
+  etherscanApiKey,
 }: {
   target: `0x${string}`;
   calldata: string;
+  etherscanApiKey: string;
 }) => {
-  const contractInfo = await getContractInfo(target);
+  const contractInfo = await getContractInfo(target, etherscanApiKey);
   if (contractInfo === "Error") return null;
   const abi = contractInfo?.abi;
   const proxyImplementation = contractInfo?.implementationAddress;

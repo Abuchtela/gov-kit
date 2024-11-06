@@ -1,12 +1,12 @@
 import OneTimePaymentForm, {
   dataToAction as oneTimeDataToAction,
-} from "../components/forms/OneTimePaymentForm";
+} from "./NounsOneTimePayment";
 import StreamingPaymentForm, {
   dataToAction as streamDataToAction,
-} from "../components/forms/StreamingPaymentForm";
+} from "./NounsStreamingPayment";
 import CustomTransactionForm, {
   dataToAction as customDataToAction,
-} from "../components/forms/CustomTransactionForm";
+} from "./CustomTransaction";
 
 enum ActionType {
   OneTimePayment = "one-time-payment",
@@ -19,11 +19,13 @@ const TransferAction = {
   form: OneTimePaymentForm,
   toAction: oneTimeDataToAction,
 };
+
 const StreamAction = {
   type: ActionType.StreamingPayment,
   form: StreamingPaymentForm,
   toAction: streamDataToAction,
 };
+
 const CustomAction = {
   type: ActionType.CustomTransaction,
   form: CustomTransactionForm,

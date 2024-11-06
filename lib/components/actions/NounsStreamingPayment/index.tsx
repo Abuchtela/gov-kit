@@ -1,5 +1,5 @@
 import { useFormContext } from "react-hook-form";
-import fetchPredictedStreamContractAddress from "../../../lib/hooks/useFetchPredictedStreamContractAddress";
+import fetchPredictedStreamContractAddress from "./hooks/useFetchPredictedStreamContractAddress";
 
 export const dataToAction = async (data: any) => {
   const start = new Date(data.startDate);

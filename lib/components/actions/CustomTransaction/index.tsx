@@ -7,8 +7,9 @@ import {
   parseEther,
 } from "viem";
 import { useFormContext, Controller } from "react-hook-form";
-import { getContractInfo } from "../../../lib/routes/contract-info";
-import { ContractInfo } from "../../../lib/types";
+import { getContractInfo } from "../../../routes/contract-info";
+import { ContractInfo } from "../../../types";
+import { useGovKitContext } from "../../GovKitProvider";
 
 export const dataToAction = (data: any) => {
   const parsedAbi = JSON.parse(data.abi);
@@ -318,6 +319,7 @@ const createSignature = (functionAbiItem: any) =>
   })`;
 
 const CustomTransactionForm = () => {
+  const { etherscanApiKey } = useGovKitContext();
   const [contractData, setContractData] = useState<ContractInfo>();
 
   const methods = useFormContext();
@@ -335,7 +337,10 @@ const CustomTransactionForm = () => {
   const fetchContractData = async (contractAddress: string) => {
     if (!isAddress(contractAddress)) return;
 
-    const contractInfo = await getContractInfo(contractAddress);
+    const contractInfo = await getContractInfo(
+      contractAddress,
+      etherscanApiKey
+    );
     if (contractInfo === "Error") return;
 
     setContractData(contractInfo);

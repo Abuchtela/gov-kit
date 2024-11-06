@@ -1,15 +1,14 @@
-import { mapValues, mirror } from "./utils/object";
+import { mapValues, mirror } from "./object";
 import { mainnet, sepolia, goerli } from "./chains";
 
 const ETH_TOKEN_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
-
 const DAO_LOGIC_PROXY_CONTRACT = "0x6f3e6272a167e8accb32072d08e0957f9c79223d";
-const DAO_EXECUTOR_PROXY_CONTRACT =
-  "0xb1a32fc9f9d8b2cf86c068cae13108809547ef71";
+/* prettier-ignore */
+const DAO_EXECUTOR_PROXY_CONTRACT = "0xb1a32fc9f9d8b2cf86c068cae13108809547ef71";
 const DAO_DATA_PROXY_CONTRACT = "0xf790a5f59678dd733fb3de93493a91f472ca1365";
 const DAO_TOKEN_CONTRACT = "0x9c8ff314c9bc7f6e59a9d9225fb22946427edc03";
-const DAO_AUCTION_HOUSE_PROXY_CONTRACT =
-  "0x830bd73e4184cef73443c15111a1df14e495c706";
+/* prettier-ignore */
+const DAO_AUCTION_HOUSE_PROXY_CONTRACT = "0x830bd73e4184cef73443c15111a1df14e495c706";
 const DAO_DESCRIPTOR_CONTRACT = "0x6229c811d04501523c6058bfaac29c91bb586268";
 const DAO_TOKEN_BUYER_CONTRACT = "0x4f2acdc74f6941390d9b1804fabc3e780388cfe5";
 const DAO_PAYER_CONTRACT = "0xd97bcd9f47cee35c0a9ec1dc40c1269afc9e8e1d";

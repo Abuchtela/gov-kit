@@ -1,6 +1,6 @@
 import { parseUnits } from "viem";
-import { resolveIdentifier as getContractWithIdentifier } from "../contracts";
-import { publicClient } from "../viem";
+import { resolveIdentifier as getContractWithIdentifier } from "../../../../utils/contracts";
+import { publicClient } from "../../../../viem";
 
 const decimalsByCurrency = {
   eth: 18,

@@ -1,21 +1,17 @@
 import { Fragment, useState } from "react";
-import { Action } from "../../lib/types";
+import { Action, ReadableTransaction } from "../types";
 import {
   resolveAction as resolveActionTransactions,
   decimalsByCurrency,
-} from "../../lib/transactions";
-import { resolveIdentifier as resolveContractIdentifier } from "../../lib/contracts";
-import { formatUnits } from "viem";
-import {
-  truncateAddress,
-  formatSolidityArgument,
-} from "../../lib/utils/ethereum";
-import { useEnhancedParsedTransaction } from "../../lib/transaction-list";
+} from "../utils/transactions";
+import { resolveIdentifier as resolveContractIdentifier } from "../utils/contracts";
+import { AbiParameter, formatUnits } from "viem";
+import { truncateAddress, formatSolidityArgument } from "../utils/ethereum";
 
 export const TransactionExplanation = ({
   transaction: t,
 }: {
-  transaction: any;
+  transaction: ReadableTransaction;
 }) => {
   const chainId = 1;
 
@@ -23,7 +19,8 @@ export const TransactionExplanation = ({
     case "transfer":
       return (
         <>
-          Transfer <em>{t.value}</em> to <em>{t.target}</em>
+          Transfer <em>{formatUnits(t.value, 18)} ETH</em> to{" "}
+          <em>{t.target}</em>
         </>
       );
 
@@ -51,7 +48,8 @@ export const TransactionExplanation = ({
     case "weth-transfer":
       return (
         <>
-          Transfer <em>{t.wethAmount} WETH</em> to <em>{t.receiverAddress}</em>
+          Transfer <em>{formatUnits(t.wethAmount, 18)} WETH</em> to{" "}
+          <em>{t.receiverAddress}</em>
         </>
       );
 
@@ -59,17 +57,15 @@ export const TransactionExplanation = ({
       return (
         <>
           Approve <em>{t.receiverAddress}</em> to spend{" "}
-          <em>
-            {t.wethAmount}
-            WETH
-          </em>
+          <em>{formatUnits(t.wethAmount, 18)} WETH</em>
         </>
       );
 
     case "weth-deposit":
       return (
         <>
-          Deposit <em>{t.value}</em> to the <em>{t.target}</em> contract
+          Deposit <em>{formatUnits(t.value, 18)} ETH</em> to the{" "}
+          <em>{t.target}</em> contract
         </>
       );
 
@@ -92,7 +88,7 @@ export const TransactionExplanation = ({
           t.token.toLowerCase() as keyof typeof decimalsByCurrency
         ]
       );
-      // TODO: handle unknown token contract
+
       return (
         <>
           Stream{" "}
@@ -147,14 +143,14 @@ export const TransactionExplanation = ({
       return (
         <>
           Transfer{" "}
-          {t.nounIds.map((nounId: number, i: number, all: any) => {
+          {t.nounIds.map((nounId: bigint, i: number, all: any) => {
             const isFirst = i === 0;
             const isLast = i === all.length - 1;
             return (
               <Fragment key={nounId}>
                 {!isFirst && <>, </>}
                 {!isFirst && isLast && <>and </>}
-                Noun {nounId}
+                Noun {Number(nounId)}
               </Fragment>
             );
           })}{" "}
@@ -166,24 +162,24 @@ export const TransactionExplanation = ({
     case "unparsed-function-call":
     case "payable-function-call":
     case "unparsed-payable-function-call":
-    case "proxied-function-call":
-    case "proxied-payable-function-call":
       return (
         <>
           {t.value > 0 ? (
             <>
-              <em>{t.value}</em> payable function call
+              <em>{formatUnits(t.value, 18)}</em> payable function call
             </>
           ) : (
             "Function call"
           )}{" "}
-          to{" "}
-          {t.proxyImplementationAddress != null ? "proxy contract" : "contract"}{" "}
+          to contract
+          {/* TODO: figure out where to annotate with proxyImplementationAddress */}
+          {/* {t.proxyImplementationAddress != null ? "proxy contract" : "contract"}{" "} */}
           <em>{t.target}</em>
         </>
       );
 
     default:
+      // @ts-ignore
       throw new Error(`Unknown transaction type: "${t.type}"`);
   }
 };
@@ -199,7 +195,7 @@ export const FunctionCallCodeBlock = ({
   name: string;
   inputs: any[];
   value: bigint;
-  inputTypes: any[];
+  inputTypes: readonly AbiParameter[];
 }) => (
   <pre className="bg-neutral-100 rounded p-2 text-sm text-neutral-500">
     {truncateAddress(target)}.<span className="text-blue-500">{name}</span>(
@@ -258,7 +254,12 @@ export const FunctionCallCodeBlock = ({
 const UnparsedFunctionCallCodeBlock = ({
   transaction: t,
 }: {
-  transaction: any;
+  transaction: {
+    target: `0x${string}`;
+    value: bigint;
+    signature?: string | null;
+    calldata?: string | null;
+  };
 }) => (
   <pre className="bg-neutral-100 rounded p-2 text-sm text-neutral-500">
     <span>target</span>: <span>{t.target}</span>
@@ -275,13 +276,13 @@ const UnparsedFunctionCallCodeBlock = ({
         <span data-argument>{t.calldata}</span>
       </>
     )}
-    {t.value > 0 && (
+    {BigInt(t.value) > 0 && (
       <>
         <br />
         <span>value</span>: <span>{t.value.toString()}</span>
         <span>
           {" // "}
-          {formatUnits(t.value, 18)} ETH
+          {formatUnits(BigInt(t.value), 18)} ETH
           {/* <FormattedEthWithConditionalTooltip value={t.value} /> */}
         </span>
       </>
@@ -375,10 +376,13 @@ const ActionSummary = ({ action }: { action: Action }) => {
   }
 };
 
-const TransactionCodeBlock = ({ transaction }: { transaction: any }) => {
+const TransactionCodeBlock = ({
+  transaction,
+}: {
+  transaction: ReadableTransaction;
+}) => {
   //   const t = useEnhancedParsedTransaction(transaction);
   const t = transaction;
-  console.log("transaction", t);
 
   switch (t.type) {
     case "transfer":
@@ -389,10 +393,10 @@ const TransactionCodeBlock = ({ transaction }: { transaction: any }) => {
 
     default: {
       if (
-        t.target == null ||
-        t.functionName == null ||
-        !Array.isArray(t.functionInputTypes) ||
-        !Array.isArray(t.functionInputs)
+        ("target" in t && t.target == null) ||
+        ("functionName" in t && t.functionName == null) ||
+        !Array.isArray("functionInputTypes" in t && t.functionInputTypes) ||
+        !Array.isArray("functionInputs" in t && t.functionInputs)
       )
         throw new Error(`Invalid transaction "${t.type}"`);
 
@@ -402,10 +406,9 @@ const TransactionCodeBlock = ({ transaction }: { transaction: any }) => {
           name={t.functionName}
           inputs={t.functionInputs}
           inputTypes={t.functionInputTypes}
-          value={t.value}
+          value={"value" in t ? t.value : BigInt(0)}
         />
       );
-      return null;
     }
   }
 };
@@ -425,6 +428,7 @@ const ActionListItem = ({ action }: { action: Action }) => {
         );
       case "stream":
         return <>This transaction initiates a new stream contract.</>;
+
       case "weth-stream-funding":
         return (
           <>
@@ -477,7 +481,7 @@ const ActionListItem = ({ action }: { action: Action }) => {
   );
 };
 
-const ActionList = ({ actions }: { actions: Action[] }) => {
+export const ActionList = ({ actions }: { actions: Action[] }) => {
   return (
     <>
       <h1>Actions</h1>
@@ -491,5 +495,3 @@ const ActionList = ({ actions }: { actions: Action[] }) => {
     </>
   );
 };
-
-export default ActionList;

@@ -10,20 +10,20 @@ import {
   AbiFunction,
   AbiParameter,
 } from "viem";
-import { sortBy } from "../lib/utils/array";
-import { formatSolidityArgument } from "../lib/utils/ethereum";
+import { sortBy } from "./array";
+import { formatSolidityArgument } from "./ethereum";
 import { resolveAddress, resolveIdentifier } from "./contracts";
 import {
   RawTransactions,
-  OffchainTransaction,
-  OnChainTransaction,
+  ReadableTransaction,
+  RawTransaction,
   Action,
   StreamTransaction,
   WethStreamFundingTransaction,
   TransferTransaction,
   UsdcTransferViaPayerTransaction,
   PayerTopUpTransaction,
-} from "./types";
+} from "../types";
 
 export const decimalsByCurrency = {
   eth: 18,
@@ -39,7 +39,7 @@ const normalizeSignature = (s: string) => {
 const CREATE_STREAM_SIGNATURE =
   "createStream(address,uint256,address,uint256,uint256,uint8,address)";
 
-const decodeCalldataWithSignature = ({
+export const decodeCalldataWithSignature = ({
   signature,
   calldata,
 }: {
@@ -97,7 +97,7 @@ const decodeCalldataWithSignature = ({
 export const parse = (
   data: RawTransactions,
   { chainId }: { chainId: number }
-) => {
+): ReadableTransaction[] => {
   const nounsGovernanceContract = resolveIdentifier(chainId, "dao");
   const nounsPayerContract = resolveIdentifier(chainId, "payer");
   const nounsTokenBuyerContract = resolveIdentifier(chainId, "token-buyer");
@@ -134,13 +134,23 @@ export const parse = (
 
     if (isEthTransfer)
       return target === nounsTokenBuyerContract.address
-        ? { type: "payer-top-up", target, value }
-        : { type: "transfer", target, value };
+        ? { type: "payer-top-up", target: target as `0x${string}`, value }
+        : { type: "transfer", target: target as `0x${string}`, value };
 
     if (signature == null)
       return value > 0
-        ? { type: "unparsed-payable-function-call", target, calldata, value }
-        : { type: "unparsed-function-call", target, calldata };
+        ? {
+            type: "unparsed-payable-function-call",
+            target: target as `0x${string}`,
+            calldata,
+            value,
+          }
+        : {
+            type: "unparsed-function-call",
+            target: target as `0x${string}`,
+            calldata,
+            value: 0n,
+          };
 
     const {
       name: functionName,
@@ -152,7 +162,7 @@ export const parse = (
     if (calldataDecodingFailed)
       return {
         type: "unparsed-function-call",
-        target,
+        target: target as `0x${string}`,
         signature,
         calldata,
         value,
@@ -167,7 +177,7 @@ export const parse = (
       const tokenContract = resolveAddress(chainId, tokenContractAddress);
       return {
         type: "stream",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -184,7 +194,7 @@ export const parse = (
     if (target === wethTokenContract.address && functionName === "deposit") {
       return {
         type: "weth-deposit",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -195,7 +205,7 @@ export const parse = (
     if (target === wethTokenContract.address && functionName === "approve") {
       return {
         type: "weth-approval",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -216,7 +226,7 @@ export const parse = (
 
       return {
         type: isStreamFunding ? "weth-stream-funding" : "weth-transfer",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -233,7 +243,7 @@ export const parse = (
         type: "usdc-approval",
         spenderAddress: functionInputs[0],
         usdcAmount: BigInt(functionInputs[1]),
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -254,7 +264,7 @@ export const parse = (
         type: isStreamFunding
           ? "usdc-stream-funding-via-payer"
           : "usdc-transfer-via-payer",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -274,12 +284,12 @@ export const parse = (
     )
       return {
         type: "treasury-noun-transfer",
-        nounId: parseInt(functionInputs[2]),
+        nounId: BigInt(functionInputs[2]),
         receiverAddress: functionInputs[1],
         safe:
           normalizeSignature(signature) ===
           normalizeSignature("safeTransferFrom(address,address,uint256)"),
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -296,7 +306,7 @@ export const parse = (
         type: "escrow-noun-transfer",
         nounIds: functionInputs[0].map((id: string) => parseInt(id)),
         receiverAddress: functionInputs[1],
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -306,7 +316,7 @@ export const parse = (
     if (value > 0)
       return {
         type: "payable-function-call",
-        target,
+        target: target as `0x${string}`,
         functionName,
         functionInputs,
         functionInputTypes,
@@ -315,16 +325,17 @@ export const parse = (
 
     return {
       type: "function-call",
-      target,
+      target: target as `0x${string}`,
       functionName,
       functionInputs,
       functionInputTypes,
+      value: 0n,
     };
   });
 };
 
 export const unparse = (
-  transactions: OffchainTransaction[],
+  transactions: ReadableTransaction[],
   { chainId }: { chainId: number }
 ): RawTransactions => {
   const nounsGovernanceContract = resolveIdentifier(chainId, "dao");
@@ -339,8 +350,8 @@ export const unparse = (
   );
 
   return transactions.reduce(
-    (acc: RawTransactions, t: OffchainTransaction) => {
-      const append = (t: OnChainTransaction) => ({
+    (acc: RawTransactions, t: ReadableTransaction) => {
+      const append = (t: RawTransaction) => ({
         targets: [...acc.targets, t.target],
         values: [...acc.values, t.value?.toString()],
         signatures: [...acc.signatures, t.signature],
@@ -469,7 +480,7 @@ export const unparse = (
             .join(",")})`;
           return append({
             target: t.target,
-            value: t.value ?? "0",
+            value: t.usdcAmount ?? "0",
             signature,
             calldata: encodeAbiParameters(
               t.functionInputTypes,
@@ -511,72 +522,11 @@ export const unparse = (
   );
 };
 
-export const extractAmounts = (parsedTransactions: OffchainTransaction[]) => {
-  const ethTransfersAndPayableCalls = parsedTransactions.filter(
-    (t) =>
-      // Exclude Payer top-ups
-      t.type !== "payer-top-up" &&
-      // Exclude WETH deposits as these are handled separately
-      t.type !== "weth-deposit" &&
-      t.hasOwnProperty("value") &&
-      // @ts-ignore
-      t.value != null
-  );
-  const wethTransfers = parsedTransactions.filter(
-    (t) =>
-      t.type === "weth-transfer" ||
-      t.type === "weth-approval" ||
-      t.type === "weth-stream-funding"
-  );
-  const usdcTransfers = parsedTransactions.filter(
-    (t) =>
-      t.type === "usdc-approval" ||
-      t.type === "usdc-transfer-via-payer" ||
-      t.type === "usdc-stream-funding-via-payer"
-  );
-  const treasuryNounTransferNounIds = parsedTransactions
-    .filter((t) => t.type === "treasury-noun-transfer")
-    // @ts-ignore
-    .map((t) => t.nounId);
-
-  const escrowNounTransferNounIds = parsedTransactions
-    .filter((t) => t.type === "escrow-noun-transfer")
-    // @ts-ignore
-    .flatMap((t) => t.nounIds);
-
-  const ethAmount = ethTransfersAndPayableCalls.reduce(
-    // @ts-ignore
-    (sum, t) => sum + t.value,
-    BigInt(0)
-  );
-  const wethAmount = wethTransfers.reduce(
-    // @ts-ignore
-    (sum, t) => sum + t.wethAmount,
-    BigInt(0)
-  );
-  const usdcAmount = usdcTransfers.reduce(
-    // @ts-ignore
-    (sum, t) => sum + t.usdcAmount,
-    BigInt(0)
-  );
-
-  return [
-    { currency: "eth", amount: ethAmount },
-    { currency: "weth", amount: wethAmount },
-    { currency: "usdc", amount: usdcAmount },
-    {
-      currency: "nouns",
-      tokens: [...treasuryNounTransferNounIds, ...escrowNounTransferNounIds],
-    },
-    // @ts-ignore
-  ].filter((e) => e.amount > 0 || e.tokens?.length > 0);
-};
-
 export const buildActions = (
-  transactions: OffchainTransaction[],
+  transactions: ReadableTransaction[],
   { chainId }: { chainId: number }
 ) => {
-  const getTransactionIndex = (t: OffchainTransaction) =>
+  const getTransactionIndex = (t: ReadableTransaction) =>
     transactions.findIndex((t_) => t_ === t);
 
   let transactionsLeft = [...transactions];
@@ -763,10 +713,14 @@ export const buildActions = (
   return sortBy("firstTransactionIndex", actions);
 };
 
-export const resolveAction = (a: Action, { chainId }: { chainId: number }) => {
+export const resolveAction = (
+  a: Action,
+  { chainId }: { chainId: number }
+): ReadableTransaction[] => {
   const nounsTokenBuyerContract = resolveIdentifier(chainId, "token-buyer");
 
-  const getParsedTransactions = (): OffchainTransaction[] => {
+  // Need to change this type to be ReadableTransaction omitting functionName, functionInputs, and functionInputTypes
+  const getParsedTransactions = (): ReadableTransaction[] => {
     switch (a.type) {
       case "one-time-payment": {
         switch (a.currency) {
@@ -870,22 +824,32 @@ export const resolveAction = (a: Action, { chainId }: { chainId: number }) => {
             target: a.contractCallTarget,
             functionName,
             functionInputs: a.contractCallArguments,
-            // @ts-ignore
             functionInputTypes,
+            value: 0n,
           },
         ];
       }
 
       default:
-        throw new Error();
+        return assertNever(a);
     }
   };
 
   return parse(unparse(getParsedTransactions(), { chainId }), { chainId });
 };
 
+const assertNever = (x: never): never => {
+  throw new Error(`Unhandled action type: ${(x as any).type}`);
+};
+
+// ----------------------------------------------------------------------------
+// FROM CAMP
+// NOT CURRENTLY USED
+// BUT MAYBE WILL BE USEFUL LATER
+// ----------------------------------------------------------------------------
+
 export const stringify = (
-  parsedTransaction: OffchainTransaction,
+  parsedTransaction: ReadableTransaction,
   { chainId }: { chainId: number }
 ) => {
   const { targets, values, signatures, calldatas } = unparse(

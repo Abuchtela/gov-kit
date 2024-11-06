@@ -1,22 +1,24 @@
 import { ContractInfo } from "../types";
 
-const etherscanRequest = (query: Record<any, any>) => {
+const etherscanRequest = (query: Record<any, any>, etherscanApiKey: string) => {
   const searchParams = new URLSearchParams(query);
   return new Request(
-    `https://api.etherscan.io/api?apikey=ZDEGW8HVG972Z1G9IT75GT1T8JPXFM4CQ5&${searchParams}`
-    // `https://api.etherscan.io/api?apikey=${process.env.ETHERSCAN_API_KEY}&${searchParams}`
+    `https://api.etherscan.io/api?apikey=${etherscanApiKey}&${searchParams}`
   );
 };
 
 const contractInfoCache = new Map();
 
-const fetchAbi = async (address: `0x${string}`) => {
+const fetchAbi = async (address: `0x${string}`, etherscanApiKey: string) => {
   const response = await fetch(
-    etherscanRequest({
-      module: "contract",
-      action: "getabi",
-      address,
-    })
+    etherscanRequest(
+      {
+        module: "contract",
+        action: "getabi",
+        address,
+      },
+      etherscanApiKey
+    )
   );
 
   const responseBody = await response.json();
@@ -31,17 +33,23 @@ const fetchAbi = async (address: `0x${string}`) => {
   return JSON.parse(responseBody.result);
 };
 
-const fetchContractInfo = async (address_: `0x${string}`) => {
+const fetchContractInfo = async (
+  address_: `0x${string}`,
+  etherscanApiKey: string
+) => {
   const address = address_.toLowerCase();
 
   if (contractInfoCache.has(address)) return contractInfoCache.get(address);
 
   const response = await fetch(
-    etherscanRequest({
-      module: "contract",
-      action: "getsourcecode",
-      address,
-    })
+    etherscanRequest(
+      {
+        module: "contract",
+        action: "getsourcecode",
+        address,
+      },
+      etherscanApiKey
+    )
   );
 
   const responseBody = await response.json();
@@ -72,7 +80,10 @@ const fetchContractInfo = async (address_: `0x${string}`) => {
   if (contractInfo.isProxy) {
     const implementationAddress = responseBody.result[0]["Implementation"];
     contractInfo.implementationAddress = implementationAddress;
-    contractInfo.implementationAbi = await fetchAbi(implementationAddress);
+    contractInfo.implementationAbi = await fetchAbi(
+      implementationAddress,
+      etherscanApiKey
+    );
   }
 
   contractInfoCache.set(address, contractInfo);
@@ -80,9 +91,15 @@ const fetchContractInfo = async (address_: `0x${string}`) => {
   return contractInfo;
 };
 
-export const getContractInfo = async (address: `0x${string}`) => {
+export const getContractInfo = async (
+  address: `0x${string}`,
+  etherscanApiKey: string
+) => {
   try {
-    const contractInfo = (await fetchContractInfo(address)) as ContractInfo;
+    const contractInfo = (await fetchContractInfo(
+      address,
+      etherscanApiKey
+    )) as ContractInfo;
     return contractInfo;
   } catch (e) {
     console.log(e);
