@@ -31,7 +31,7 @@ export const decimalsByCurrency = {
   usdc: 6,
 };
 
-const normalizeSignature = (s: string) => {
+export const normalizeSignature = (s: string) => {
   if (s == null) return null;
   return s.replace(/\s+/g, " ").replace(/,\s*/g, ", ");
 };

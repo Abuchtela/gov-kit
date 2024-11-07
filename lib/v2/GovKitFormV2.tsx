@@ -4,7 +4,7 @@ import {
   SubmitHandler,
   useFormContext,
 } from "react-hook-form";
-import { useGovKitContext } from "./GovKitProvider";
+import { useGovKitContext } from "./GovKitProviderV2";
 
 export const GovKitForm = ({
   onSubmit,
@@ -15,15 +15,10 @@ export const GovKitForm = ({
 }) => {
   const methods = useForm<any>();
   const { handleSubmit } = methods;
-  const { actions } = useGovKitContext();
 
   const onFormSubmit: SubmitHandler<any> = async (data) => {
-    let action;
-    for (const actionType of actions) {
-      if (data.type === actionType.type) {
-        action = await actionType.toAction(data);
-      }
-    }
+    // maybe we have some sort of validation step using zod, built into the action?
+    let action = data;
     onSubmit(action);
   };
 
@@ -34,12 +29,6 @@ export const GovKitForm = ({
   );
 };
 
-/*
-  onChange --
-  - set default values for the given type
-  - clear out the old values for the other types
-  - I don't think this matters a whole lot
-   */
 const TypeSelect = ({ className }: { className?: string }) => {
   const { register } = useFormContext();
   const { actions } = useGovKitContext();
@@ -57,16 +46,39 @@ const TypeSelect = ({ className }: { className?: string }) => {
 };
 
 const FormBody = () => {
-  const { actions } = useGovKitContext();
-  const { watch } = useFormContext();
-  const type = watch("type");
+  const { actions, TextInput, NumberInput, AddressInput, Select } =
+    useGovKitContext();
+  const methods = useFormContext();
+  const type = methods.watch("type");
   const actionTypes = actions.map((action) => action.type);
 
   const renderFormForType = (type: string) => {
-    for (const actionType of actions) {
-      if (type === actionType.type) {
-        const Form = actionType.form;
-        return <Form />;
+    for (const actionConfig of actions) {
+      if (type === actionConfig.type) {
+        const formValues = actionConfig.getFormValues();
+        return (
+          <div className="flex flex-col space-y-4">
+            {formValues.map((value) => (
+              <div className="flex flex-col" key={value.key}>
+                <label className="text-sm font-bold text-neutral-500 mb-1 ml-1">
+                  {value.label}
+                </label>
+                {value.type === "text" ? (
+                  <TextInput {...methods.register(value.key)} />
+                ) : value.type === "number" ? (
+                  <NumberInput {...methods.register(value.key)} />
+                ) : value.type === "address" ? (
+                  <AddressInput {...methods.register(value.key)} />
+                ) : value.type === "select" && value.options ? (
+                  <Select
+                    {...methods.register(value.key)}
+                    options={value.options}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        );
       }
     }
   };
