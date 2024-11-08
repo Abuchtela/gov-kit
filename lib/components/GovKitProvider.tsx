@@ -3,25 +3,31 @@ import {
   DefaultTextInput,
   DefaultNumberInput,
   DefaultAddressInput,
+  DefaultSelect,
 } from "./DefaultFormElements";
-import { FormAction } from "../types";
+import { TypedActionConfig } from "../types";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
+  options: { value: string; label: string }[];
+};
+
 type ContextValue = {
   TextInput: React.ComponentType<InputProps>;
   NumberInput: React.ComponentType<InputProps>;
   AddressInput: React.ComponentType<InputProps>;
+  Select: React.ComponentType<SelectProps>;
   etherscanApiKey: string;
   // maybe include this for viem?
   //   alchemyApiKey: string;
-  actions: FormAction[];
+  actions: TypedActionConfig[];
 };
 
 const Context = createContext<ContextValue | null>(null);
 
 type Config = Partial<Omit<ContextValue, "etherscanApiKey" | "actions">> & {
   etherscanApiKey: string;
-  actions: FormAction[];
+  actions: TypedActionConfig[];
 };
 
 export interface GovKitProviderProps {
@@ -37,6 +43,7 @@ export const GovKitProvider: React.FC<GovKitProviderProps> = ({
     TextInput: DefaultTextInput,
     NumberInput: DefaultNumberInput,
     AddressInput: DefaultAddressInput,
+    Select: DefaultSelect,
   };
 
   const value = {

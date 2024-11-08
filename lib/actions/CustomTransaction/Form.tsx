@@ -7,9 +7,9 @@ import {
   parseEther,
 } from "viem";
 import { useFormContext, Controller } from "react-hook-form";
-import { getContractInfo } from "../../../routes/contract-info";
-import { ContractInfo } from "../../../types";
-import { useGovKitContext } from "../../GovKitProvider";
+import { getContractInfo } from "../../routes/contract-info";
+import { ContractInfo } from "../../_types";
+import { useGovKitContext } from "../../components/GovKitProvider";
 
 export const dataToAction = (data: any) => {
   const parsedAbi = JSON.parse(data.abi);
@@ -18,7 +18,8 @@ export const dataToAction = (data: any) => {
   );
   const { inputs: inputTypes } = selectedSignatureAbiItem;
   return {
-    type: "custom-transaction",
+    type: "custom-transaction" as const,
+    target: data.target,
     contractCallTarget: data.target,
     contractCallSignature: data.signature,
     contractCallArguments: JSON.parse(
@@ -32,7 +33,7 @@ export const dataToAction = (data: any) => {
         (_, value) => (typeof value === "bigint" ? value.toString() : value)
       )
     ),
-    contractCallValue: data.ethValue ? parseEther(data.ethValue).toString() : 0,
+    contractCallValue: data.ethValue ? Number(parseEther(data.ethValue)) : 0,
   };
 };
 
@@ -401,9 +402,6 @@ const CustomTransactionForm = () => {
   const isPayableContractCall =
     selectedContractCallAbiItem?.payable ??
     selectedContractCallAbiItem?.stateMutability === "payable";
-
-  console.log("signature", signature);
-  console.log(selectedContractCallAbiItem);
 
   return (
     <div className="flex flex-col space-y-4">

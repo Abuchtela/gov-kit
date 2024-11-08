@@ -13,17 +13,18 @@ export const GovKitForm = ({
   onSubmit: (action: any) => void;
   children: React.ReactElement | React.ReactElement[];
 }) => {
+  const { actions } = useGovKitContext();
   const methods = useForm<any>();
   const { handleSubmit } = methods;
-  const { actions } = useGovKitContext();
+  const type = methods.watch("type");
 
   const onFormSubmit: SubmitHandler<any> = async (data) => {
-    let action;
-    for (const actionType of actions) {
-      if (data.type === actionType.type) {
-        action = await actionType.toAction(data);
-      }
+    const actionConfig = actions.find((a) => a.type === type);
+    if (!actionConfig) {
+      throw new Error(`No action config found for type ${type}`);
     }
+
+    const action = actionConfig.formdataToAction(data);
     onSubmit(action);
   };
 
@@ -34,44 +35,48 @@ export const GovKitForm = ({
   );
 };
 
-/*
-  onChange --
-  - set default values for the given type
-  - clear out the old values for the other types
-  - I don't think this matters a whole lot
-   */
 const TypeSelect = ({ className }: { className?: string }) => {
   const { register } = useFormContext();
   const { actions } = useGovKitContext();
   const actionTypes = actions.map((action) => action.type);
 
   return (
-    <select className={className} {...register("type")}>
-      {actionTypes.map((actionType) => (
-        <option key={actionType} value={actionType}>
-          {actionType}
-        </option>
-      ))}
-    </select>
+    <div>
+      <label className="text-sm font-bold text-neutral-500 mb-1 ml-1">
+        Action Type
+      </label>
+      <select {...register("type")} className={className}>
+        {actionTypes.map((actionType) => (
+          <option key={actionType} value={actionType}>
+            {actionType}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };
 
-const FormBody = () => {
+const FormBody = ({ className }: { className?: string }) => {
   const { actions } = useGovKitContext();
-  const { watch } = useFormContext();
-  const type = watch("type");
+  const methods = useFormContext();
+  const type = methods.watch("type");
   const actionTypes = actions.map((action) => action.type);
 
   const renderFormForType = (type: string) => {
-    for (const actionType of actions) {
-      if (type === actionType.type) {
-        const Form = actionType.form;
+    for (const actionConfig of actions) {
+      if (type === actionConfig.type) {
+        const Form = actionConfig.form;
+        if (!Form) {
+          throw new Error(`No form found for type ${type}`);
+        }
         return <Form />;
       }
     }
   };
 
-  return <>{renderFormForType(type || actionTypes[0])}</>;
+  return (
+    <div className={className}>{renderFormForType(type || actionTypes[0])}</div>
+  );
 };
 
 const Button = ({
