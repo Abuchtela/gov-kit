@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { encodeAbiParameters } from "viem";
-import TransactionParser from "../lib/v2/utils/parser";
-import { OneTimePaymentActionConfig } from "../lib/v2/actions/OneTimePayment";
-import { RawTransactions } from "../lib/v2/utils/types";
+import TransactionParser from "../lib/utils/parser";
+import { OneTimePaymentActionConfig } from "../lib/actions/NounsOneTimePayment";
+import { RawTransactions } from "../lib/types";
 
 const SEND_FROG_1_ETH_RAW = {
   targets: ["0x65A3870F48B5237f27f674Ec42eA1E017E111D63"] as `0x${string}`[],

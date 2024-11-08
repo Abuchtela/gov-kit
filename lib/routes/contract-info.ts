@@ -1,4 +1,4 @@
-import { ContractInfo } from "../types";
+import { ContractInfo } from "../_types";
 
 const etherscanRequest = (query: Record<any, any>, etherscanApiKey: string) => {
   const searchParams = new URLSearchParams(query);
@@ -53,7 +53,6 @@ const fetchContractInfo = async (
   );
 
   const responseBody = await response.json();
-
   if (responseBody.status !== "1" || responseBody.result.length === 0)
     throw new Error();
 

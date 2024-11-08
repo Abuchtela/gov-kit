@@ -1,15 +1,16 @@
-import { RawTransaction, RawTransactions } from "../types";
-import { ActionConfig } from "../v2/utils/transaction_configs";
-import { Action, ReadableTransaction } from "../v2/utils/transaction_configs";
+import {
+  Action,
+  ReadableTransaction,
+  RawTransaction,
+  RawTransactions,
+  TypedActionConfig,
+} from "../types";
 
 class TransactionParser {
   private readonly chainId: number;
-  private readonly globalActions: ActionConfig<Action, ReadableTransaction>[];
+  private readonly globalActions: TypedActionConfig[];
 
-  constructor(
-    chainId: number,
-    globalActions: ActionConfig<Action, ReadableTransaction>[]
-  ) {
+  constructor(chainId: number, globalActions: TypedActionConfig[]) {
     this.chainId = chainId;
     this.globalActions = globalActions;
   }
@@ -75,7 +76,8 @@ class TransactionParser {
       (ga) => ga.type === action.type
     );
     if (!actionConfig) throw new Error("No action config found");
-    return actionConfig.resolveAction(action);
+    // TODO: type this better
+    return actionConfig.resolveAction(action as any);
   }
 
   buildActions(transactions: ReadableTransaction[]) {

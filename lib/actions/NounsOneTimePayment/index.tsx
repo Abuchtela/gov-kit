@@ -5,21 +5,21 @@ import {
   formatEther,
   formatUnits,
 } from "viem";
+import { TransactionConfig, ActionConfig } from "../../types";
 import {
-  TransactionConfig,
-  ActionConfig,
   TransferTransaction,
   UsdcTransferViaPayerTransaction,
   OneTimePaymentAction,
-} from "../utils/types";
+} from "./types";
 import { resolveIdentifier } from "../../utils/contracts";
 import {
   decimalsByCurrency,
   decodeCalldataWithSignature,
 } from "../../utils/transactions";
-import { FunctionCallCodeBlock } from "../components/FunctionCallCodeBlock";
-import { UnparsedFunctionCallCodeBlock } from "../components/UnparsedFunctionCallCodeBlock";
+import { FunctionCallCodeBlock } from "../../components/FunctionCallCodeBlock";
+import { UnparsedFunctionCallCodeBlock } from "../../components/UnparsedFunctionCallCodeBlock";
 import { normalizeSignature } from "../../utils/transactions";
+import OneTimePaymentForm, { dataToAction } from "./Form";
 
 const transferTransactionConfig: TransactionConfig<TransferTransaction> = {
   type: "transfer",
@@ -119,29 +119,8 @@ export const OneTimePaymentActionConfig: ActionConfig<
   TransferTransaction | UsdcTransferViaPayerTransaction
 > = {
   type: "one-time-payment",
-  getFormValues: () => {
-    return [
-      {
-        label: "Target",
-        key: "target",
-        type: "address",
-      },
-      {
-        label: "Amount",
-        key: "amount",
-        type: "number",
-      },
-      {
-        label: "Currency",
-        key: "currency",
-        type: "select",
-        options: [
-          { value: "eth", label: "ETH" },
-          { value: "usdc", label: "USDC" },
-        ],
-      },
-    ];
-  },
+  form: () => <OneTimePaymentForm />,
+  formdataToAction: dataToAction,
   getTransactions: () => {
     return [transferTransactionConfig, usdcTransferViaPayerTransactionConfig];
   },

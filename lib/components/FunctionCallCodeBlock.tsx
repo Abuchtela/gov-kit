@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { formatUnits, AbiParameter } from "viem";
-import { truncateAddress, formatSolidityArgument } from "../../utils/ethereum";
+import { truncateAddress, formatSolidityArgument } from "../utils/ethereum";
 
 export const FunctionCallCodeBlock = ({
   target,
