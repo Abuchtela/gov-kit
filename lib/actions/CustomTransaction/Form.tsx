@@ -405,12 +405,6 @@ const CustomTransactionForm = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div>
-        <p>
-          Helpful contract info for copy pasting...
-          0x6f3E6272A167e8AcCb32072d08E0957F9c79223d
-        </p>
-      </div>
       <div className="flex flex-col">
         <label className="text-sm font-bold text-neutral-500 mb-1 ml-1">
           Contract address

@@ -44,6 +44,7 @@ export const ActionListItem = ({ action }: { action: Action }) => {
     throw new Error(`Unknown action type: "${action.type}"`);
   }
 
+  // what if we use the parser here instead on trying to find the config?
   const actionTransactionConfigs = actionConfig.getTransactions();
   const actionTransactions = actionConfig.resolveAction(action as any);
   const ActionSummary = actionConfig.actionSummary(action as any);

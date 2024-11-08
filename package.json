@@ -30,9 +30,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-hook-form": "^7.0.0",
     "shades": "^2.2.0",
     "viem": "^2.17.2"
   },

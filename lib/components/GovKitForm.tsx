@@ -9,12 +9,20 @@ import { useGovKitContext } from "./GovKitProvider";
 export const GovKitForm = ({
   onSubmit,
   children,
+  initialValues,
 }: {
   onSubmit: (action: any) => void;
   children: React.ReactElement | React.ReactElement[];
+  initialValues?: any;
 }) => {
   const { actions } = useGovKitContext();
-  const methods = useForm<any>();
+  const methods = useForm<any>({
+    defaultValues: {
+      type: actions[0]?.type, // Set default type immediately
+      ...initialValues, // Allow overriding with initialValues
+    },
+  });
+
   const { handleSubmit } = methods;
   const type = methods.watch("type");
 
@@ -23,14 +31,15 @@ export const GovKitForm = ({
     if (!actionConfig) {
       throw new Error(`No action config found for type ${type}`);
     }
-
     const action = actionConfig.formdataToAction(data);
     onSubmit(action);
   };
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onFormSubmit)}>{children}</form>
+      <form onSubmit={handleSubmit(onFormSubmit)} className="w-full">
+        {children}
+      </form>
     </FormProvider>
   );
 };
@@ -41,18 +50,13 @@ const TypeSelect = ({ className }: { className?: string }) => {
   const actionTypes = actions.map((action) => action.type);
 
   return (
-    <div>
-      <label className="text-sm font-bold text-neutral-500 mb-1 ml-1">
-        Action Type
-      </label>
-      <select {...register("type")} className={className}>
-        {actionTypes.map((actionType) => (
-          <option key={actionType} value={actionType}>
-            {actionType}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select {...register("type")} className={className}>
+      {actionTypes.map((actionType) => (
+        <option key={actionType} value={actionType}>
+          {actionType}
+        </option>
+      ))}
+    </select>
   );
 };
 
