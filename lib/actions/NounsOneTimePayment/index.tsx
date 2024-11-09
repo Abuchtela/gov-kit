@@ -1,9 +1,9 @@
 import {
   parseUnits,
   parseEther,
-  encodeAbiParameters,
   formatEther,
   formatUnits,
+  encodeAbiParameters,
 } from "viem";
 import { TransactionConfig, ActionConfig } from "../../types";
 import {
@@ -12,14 +12,19 @@ import {
   OneTimePaymentAction,
 } from "./types";
 import { resolveIdentifier } from "../../utils/contracts";
-import {
-  decimalsByCurrency,
-  decodeCalldataWithSignature,
-} from "../../utils/transactions";
 import { FunctionCallCodeBlock } from "../../components/FunctionCallCodeBlock";
 import { UnparsedFunctionCallCodeBlock } from "../../components/UnparsedFunctionCallCodeBlock";
-import { normalizeSignature } from "../../utils/transactions";
 import OneTimePaymentForm, { dataToAction } from "./Form";
+import {
+  normalizeSignature,
+  decodeCalldataWithSignature,
+} from "../../utils/ethereum";
+
+export const decimalsByCurrency = {
+  eth: 18,
+  weth: 18,
+  usdc: 6,
+};
 
 const transferTransactionConfig: TransactionConfig<TransferTransaction> = {
   type: "transfer",

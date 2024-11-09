@@ -6,7 +6,7 @@ import {
   TypedActionConfig,
 } from "../types";
 
-class TransactionParser {
+export class TransactionParser {
   private readonly chainId: number;
   private readonly globalActions: TypedActionConfig[];
 
@@ -28,11 +28,12 @@ class TransactionParser {
       .flatMap((t) => t);
 
     return rawTransactions.map(({ target, signature, calldata, value }) => {
-      const possibleTransaction = possibleTransactions.find((t) =>
-        t.parse(
-          { target, signature, calldata, value },
-          { chainId: this.chainId }
-        )
+      const possibleTransaction = possibleTransactions.find(
+        (t) =>
+          !!t.parse(
+            { target, signature, calldata, value },
+            { chainId: this.chainId }
+          )
       );
 
       if (!possibleTransaction) throw new Error("No transaction found");
@@ -81,9 +82,6 @@ class TransactionParser {
   }
 
   buildActions(transactions: ReadableTransaction[]) {
-    const getTransactionIndex = (t: ReadableTransaction) =>
-      transactions.findIndex((t_) => t_ === t);
-
     let transactionsLeft = [...transactions];
     let actions: Action[] = [];
     while (transactionsLeft.length > 0) {
@@ -105,12 +103,13 @@ class TransactionParser {
     }
 
     return actions;
-    // return sortBy("firstTransactionIndex", actions);
   }
 
-  //   actionSummary(action: Action) {
-  //     return this.globalActions.find((ga) => ga.actionSummary(action));
-  //   }
+  actionSummary(action: Action) {
+    const actionConfig = this.globalActions.find(
+      (ga) => ga.type === action.type
+    );
+    if (!actionConfig) throw new Error("No action config found");
+    return actionConfig.actionSummary(action as any);
+  }
 }
-
-export default TransactionParser;

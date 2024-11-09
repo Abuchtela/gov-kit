@@ -37,17 +37,16 @@ export const TransactionExplanation = ({
 
 export const ActionListItem = ({ action }: { action: Action }) => {
   const [expanded, setExpanded] = useState(false);
-  const { actions } = useGovKitContext();
+  const { actions, parser } = useGovKitContext();
 
   const actionConfig = actions.find((a) => a.type === action.type);
   if (actionConfig == null) {
     throw new Error(`Unknown action type: "${action.type}"`);
   }
 
-  // what if we use the parser here instead on trying to find the config?
   const actionTransactionConfigs = actionConfig.getTransactions();
-  const actionTransactions = actionConfig.resolveAction(action as any);
-  const ActionSummary = actionConfig.actionSummary(action as any);
+  const actionTransactions = parser.resolveAction(action);
+  const ActionSummary = parser.actionSummary(action);
 
   return (
     <>

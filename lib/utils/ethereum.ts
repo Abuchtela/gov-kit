@@ -1,4 +1,11 @@
-import { getAddress as checksumEncodeAddress } from "viem";
+import {} from "viem";
+import {
+  getAddress as checksumEncodeAddress,
+  AbiFunction,
+  AbiParameter,
+  parseAbiItem,
+  decodeAbiParameters,
+} from "viem";
 
 export const truncateAddress = (address_: `0x${string}`) => {
   const address = checksumEncodeAddress(address_);
@@ -21,4 +28,64 @@ export const formatSolidityArgument = (a: string | any[] | any): string => {
   }, null);
 
   return `(${formattedEntries})`;
+};
+
+export const normalizeSignature = (s: string) => {
+  if (s == null) return null;
+  return s.replace(/\s+/g, " ").replace(/,\s*/g, ", ");
+};
+
+export const decodeCalldataWithSignature = ({
+  signature,
+  calldata,
+}: {
+  signature: string;
+  calldata: `0x${string}`;
+}): {
+  name: string;
+  inputs: any[];
+  inputTypes: readonly AbiParameter[];
+  calldataDecodingFailed: boolean;
+  signatureDecodingFailed: boolean;
+} => {
+  try {
+    const { name, inputs: inputTypes } = parseAbiItem(
+      `function ${signature}`
+    ) as AbiFunction;
+    if (inputTypes.length === 0)
+      return {
+        name,
+        inputs: [],
+        inputTypes: [],
+        signatureDecodingFailed: false,
+        calldataDecodingFailed: false,
+      };
+
+    try {
+      const inputs = decodeAbiParameters(inputTypes, calldata) as any;
+      return {
+        name,
+        inputs,
+        inputTypes,
+        signatureDecodingFailed: false,
+        calldataDecodingFailed: false,
+      };
+    } catch (e) {
+      return {
+        name,
+        calldataDecodingFailed: true,
+        signatureDecodingFailed: false,
+        inputs: [],
+        inputTypes: [],
+      };
+    }
+  } catch (e) {
+    return {
+      name: signature,
+      signatureDecodingFailed: true,
+      calldataDecodingFailed: true,
+      inputs: [],
+      inputTypes: [],
+    };
+  }
 };

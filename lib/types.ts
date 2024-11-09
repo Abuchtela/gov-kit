@@ -53,7 +53,6 @@ export type ActionConfig<
   type: A["type"];
   form: React.FC;
   formdataToAction: (data: any) => A;
-  // wish I could type this better, like TransactionConfig<T>
   getTransactions: () => TransactionConfig<any>[];
   resolveAction: (a: A) => T[];
   buildAction: (r: any[]) => { action: A; remainingTransactions: any[] } | null;

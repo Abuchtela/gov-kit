@@ -1,9 +1,11 @@
 import { parseEther, encodeAbiParameters, formatUnits } from "viem";
 import { TransactionConfig, ActionConfig } from "../../types";
 import { TransferENSFromTreasuryAction, TransferENSTransaction } from "./types";
-import { decodeCalldataWithSignature } from "../../utils/transactions";
 import { FunctionCallCodeBlock } from "../../components/FunctionCallCodeBlock";
-import { normalizeSignature } from "../../utils/transactions";
+import {
+  normalizeSignature,
+  decodeCalldataWithSignature,
+} from "../../utils/ethereum";
 import TransferENSFromTreasuryForm, { dataToAction } from "./Form";
 
 export const transferENSTransactionConfig: TransactionConfig<TransferENSTransaction> =
@@ -20,7 +22,8 @@ export const transferENSTransactionConfig: TransactionConfig<TransferENSTransact
       });
 
       if (
-        rt.target === "0x65A3870F48B5237f27f674Ec42eA1E017E111D63" &&
+        rt.target.toLowerCase() ===
+          "0x323a76393544d5ecca80cd6ef2a560c6a395b7e3".toLowerCase() &&
         normalizeSignature(rt.signature) ===
           normalizeSignature("transfer(address,uint256)")
       ) {
@@ -41,8 +44,7 @@ export const transferENSTransactionConfig: TransactionConfig<TransferENSTransact
     },
     unparse: (t) => {
       return {
-        // TODO: replace with the actual contract address
-        target: "0x65A3870F48B5237f27f674Ec42eA1E017E111D63",
+        target: "0x323A76393544d5ecca80cd6ef2A560C6a395b7E3",
         value: "0",
         signature: "transfer(address,uint256)",
         calldata: encodeAbiParameters(
