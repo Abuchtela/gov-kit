@@ -1,4 +1,4 @@
-import { ContractInfo } from "../_types";
+import { ContractInfo } from "../types";
 
 const etherscanRequest = (query: Record<any, any>, etherscanApiKey: string) => {
   const searchParams = new URLSearchParams(query);

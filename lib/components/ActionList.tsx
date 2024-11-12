@@ -30,7 +30,6 @@ export const TransactionExplanation = ({
       );
 
     default:
-      // @ts-ignore
       throw new Error(`Unknown transaction type: "${t.type}"`);
   }
 };
@@ -40,11 +39,11 @@ export const ActionListItem = ({ action }: { action: Action }) => {
   const { actions, parser } = useGovKitContext();
 
   const actionConfig = actions.find((a) => a.type === action.type);
+
   if (actionConfig == null) {
     throw new Error(`Unknown action type: "${action.type}"`);
   }
 
-  const actionTransactionConfigs = actionConfig.getTransactions();
   const actionTransactions = parser.resolveAction(action);
   const ActionSummary = parser.actionSummary(action);
 
@@ -57,19 +56,8 @@ export const ActionListItem = ({ action }: { action: Action }) => {
       {expanded && (
         <ul className="space-y-4">
           {actionTransactions.map((t, i) => {
-            const transactionConfig = actionTransactionConfigs.find(
-              (atc) => atc.type === t.type
-            );
-            if (transactionConfig == null) {
-              throw new Error(`Unknown transaction type: "${t.type}"`);
-            }
-
-            const parsed = transactionConfig.parse(
-              transactionConfig.unparse(t, { chainId: 1 }),
-              { chainId: 1 }
-            );
-            const Comment = transactionConfig.transactionComment(t);
-            const CodeBlock = transactionConfig.transactionCodeBlock(parsed);
+            const Comment = t.comment();
+            const CodeBlock = t.codeBlock();
             return (
               <li key={i}>
                 {CodeBlock}

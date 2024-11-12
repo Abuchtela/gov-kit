@@ -14,6 +14,14 @@ import {
   TransferENSTransaction,
 } from "./actions/TransferENSFromTreasury/types";
 
+export type ContractInfo = {
+  name: string;
+  abi: any;
+  isProxy: boolean;
+  implementationAddress: `0x${string}`;
+  implementationAbi: any;
+};
+
 export type RawTransaction = {
   target: `0x${string}`;
   signature: string;
@@ -34,30 +42,9 @@ export type ParsedFunctionCallTransaction<T> = T & {
   functionInputTypes?: readonly AbiParameter[];
 };
 
-export type TransactionConfig<T extends { type: string }> = {
-  type: T["type"];
-  parse: (t: RawTransaction, { chainId }: { chainId: number }) => T | false;
-  unparse: (t: T, { chainId }: { chainId: number }) => RawTransaction;
-  transactionCodeBlock: (t: ParsedFunctionCallTransaction<T>) => JSX.Element;
-  transactionComment: (t: T) => JSX.Element | undefined;
-};
-
 export interface BaseAction {
   type: string;
 }
-
-export type ActionConfig<
-  A extends BaseAction,
-  T extends BaseReadableTransaction
-> = {
-  type: A["type"];
-  form: React.FC;
-  formdataToAction: (data: any) => A;
-  getTransactions: () => TransactionConfig<any>[];
-  resolveAction: (a: A) => T[];
-  buildAction: (r: any[]) => { action: A; remainingTransactions: any[] } | null;
-  actionSummary: (a: A) => JSX.Element;
-};
 
 export type Action =
   | OneTimePaymentAction
@@ -75,22 +62,56 @@ export type ReadableTransaction =
   | PayableFunctionCallTransaction
   | TransferENSTransaction;
 
-export type OneTimePaymentActionConfig = ActionConfig<
-  OneTimePaymentAction,
-  TransferTransaction | UsdcTransferViaPayerTransaction
->;
+// ------------------------------------------------------------
+// Parser classes
+// ------------------------------------------------------------
 
-export type CustomTransactionActionConfig = ActionConfig<
-  CustomTransactionAction,
-  FunctionCallTransaction | PayableFunctionCallTransaction
->;
+export class ActionHandler<A extends Action, T extends ReadableTransaction> {
+  static readonly type: string;
+  static readonly form: React.FC;
+  static readonly action: Action;
 
-export type TransferENSFromTreasuryActionConfig = ActionConfig<
-  TransferENSFromTreasuryAction,
-  TransferENSTransaction
->;
+  static formdataToAction: (data: any) => Action;
+  static getTransactions: () => (typeof TransactionHandler<ReadableTransaction>)[];
+  static build: (
+    r: any[]
+  ) => { action: Action; remainingTransactions: any[] } | null;
 
-export type TypedActionConfig =
-  | OneTimePaymentActionConfig
-  | CustomTransactionActionConfig
-  | TransferENSFromTreasuryActionConfig;
+  resolve(a: A): TransactionHandler<T>[] {
+    throw new Error("Not implemented");
+  }
+
+  summarize(a: A): JSX.Element {
+    throw new Error("Not implemented");
+  }
+
+  constructor(data: Action) {}
+}
+
+export abstract class TransactionHandler<T extends ReadableTransaction> {
+  static readonly type: string;
+  abstract readonly raw: RawTransaction;
+  abstract readonly parsed: ParsedFunctionCallTransaction<T>;
+
+  static parse(
+    rt: RawTransaction,
+    { chainId }: { chainId: number }
+  ): ReadableTransaction | false {
+    throw new Error("Must implement static parse");
+  }
+
+  static unparse(
+    t: ReadableTransaction,
+    { chainId }: { chainId: number }
+  ): RawTransaction {
+    throw new Error("Must implement static unparse");
+  }
+
+  abstract codeBlock(): JSX.Element;
+  abstract comment(): JSX.Element | undefined;
+
+  constructor(
+    mode: "raw" | "parsed",
+    data: RawTransaction | ParsedFunctionCallTransaction<T>
+  ) {}
+}

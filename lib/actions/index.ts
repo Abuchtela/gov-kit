@@ -1,3 +1,3 @@
-export { OneTimePaymentActionConfig as OneTimePayment } from "./NounsOneTimePayment";
-export { CustomTransactionActionConfig as CustomTransaction } from "./CustomTransaction";
-export { TransferENSFromTreasuryActionConfig as TransferENS } from "./TransferENSFromTreasury";
+// export { OneTimePaymentActionConfig as OneTimePayment } from "./NounsOneTimePayment";
+export { CustomTransactionActionHandler as CustomTransaction } from "./CustomTransaction";
+export { TransferENSFromTreasuryActionHandler as TransferENS } from "./TransferENSFromTreasury";

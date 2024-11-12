@@ -5,7 +5,7 @@ import {
   DefaultAddressInput,
   DefaultSelect,
 } from "./DefaultFormElements";
-import { TypedActionConfig } from "../types";
+import { ActionParser } from "../types";
 import { TransactionParser } from "../utils/parser";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
@@ -21,7 +21,7 @@ type ContextValue = {
   etherscanApiKey: string;
   // maybe include this for viem?
   //   alchemyApiKey: string;
-  actions: TypedActionConfig[];
+  actions: (typeof ActionParser)[];
   parser: TransactionParser;
 };
 
@@ -29,7 +29,7 @@ const Context = createContext<ContextValue | null>(null);
 
 type Config = Partial<Omit<ContextValue, "etherscanApiKey" | "actions">> & {
   etherscanApiKey: string;
-  actions: TypedActionConfig[];
+  actions: (typeof ActionParser)[];
   chainId: number;
 };
 

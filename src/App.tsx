@@ -137,8 +137,8 @@ const App = () => {
         <button
           className="w-[600px] bg-blue-500 text-white py-1 px-2 rounded-md mt-4"
           onClick={() => {
-            const resolvedAction = parser.resolveAction(actions[0]);
-            const parsed = parser.unparse(resolvedAction);
+            const transactions = parser.resolveAction(actions[0]);
+            const parsed = parser.unparse(transactions.map((t) => t.parsed));
             console.log(parsed);
           }}
         >

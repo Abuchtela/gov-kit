@@ -8,8 +8,7 @@ import ReactDOM from "react-dom/client";
 // } from "gov-kit-react/actions";
 
 import { GovKitProvider } from "../lib";
-import { TransferENS, OneTimePayment, CustomTransaction } from "../lib/actions";
-
+import { TransferENS, CustomTransaction } from "../lib/actions";
 import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -18,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       config={{
         chainId: 1,
         etherscanApiKey: "123",
-        actions: [TransferENS, OneTimePayment, CustomTransaction],
+        actions: [TransferENS, CustomTransaction],
       }}
     >
       <App />

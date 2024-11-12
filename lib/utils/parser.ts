@@ -3,14 +3,13 @@ import {
   ReadableTransaction,
   RawTransaction,
   RawTransactions,
-  TypedActionConfig,
+  ActionHandler,
 } from "../types";
 
 export class TransactionParser {
   private readonly chainId: number;
-  private readonly globalActions: TypedActionConfig[];
-
-  constructor(chainId: number, globalActions: TypedActionConfig[]) {
+  private readonly globalActions: (typeof ActionHandler)[];
+  constructor(chainId: number, globalActions: (typeof ActionHandler)[]) {
     this.chainId = chainId;
     this.globalActions = globalActions;
   }
@@ -77,8 +76,8 @@ export class TransactionParser {
       (ga) => ga.type === action.type
     );
     if (!actionConfig) throw new Error("No action config found");
-    // TODO: type this better
-    return actionConfig.resolveAction(action as any);
+    const actionParserInstance = new actionConfig(action);
+    return actionParserInstance.resolve(action);
   }
 
   buildActions(transactions: ReadableTransaction[]) {
@@ -87,7 +86,7 @@ export class TransactionParser {
     while (transactionsLeft.length > 0) {
       const [parsedActions, remainingTransactions] = this.globalActions.reduce(
         ([actionsFromReducer, remainingTransactionsFromReducer], action) => {
-          const res = action.buildAction(remainingTransactionsFromReducer);
+          const res = action.build(remainingTransactionsFromReducer);
           if (res != null) {
             actionsFromReducer.push(res.action);
             return [actionsFromReducer, res.remainingTransactions];
@@ -110,6 +109,7 @@ export class TransactionParser {
       (ga) => ga.type === action.type
     );
     if (!actionConfig) throw new Error("No action config found");
-    return actionConfig.actionSummary(action as any);
+    const actionParserInstance = new actionConfig(action);
+    return actionParserInstance.summarize(action);
   }
 }
