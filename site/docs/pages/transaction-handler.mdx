@@ -1,0 +1,52 @@
+# Transaction Handler
+
+The Transaction Handler is responsible for handling transactions.
+
+The class is defined as:
+
+``` typescript
+export abstract class TransactionHandler<T extends ReadableTransaction> {
+  static readonly type: string;
+  abstract readonly raw: RawTransaction;
+  abstract readonly parsed: ParsedFunctionCallTransaction<T>;
+
+  constructor(
+    mode: "raw" | "parsed",
+    data: RawTransaction | ParsedFunctionCallTransaction<T>
+  ) {}
+
+  static parse(
+    rt: RawTransaction,
+    { chainId }: { chainId: number }
+  ): ReadableTransaction | false {
+    throw new Error("Must implement static parse");
+  }
+
+  static unparse(
+    t: ReadableTransaction,
+    { chainId }: { chainId: number }
+  ): RawTransaction {
+    throw new Error("Must implement static unparse");
+  }
+
+  abstract codeBlock(): JSX.Element;
+  abstract comment(): JSX.Element | undefined;
+}
+```
+## Methods
+
+### `type`
+
+The `type` is a string that is used to identify the transaction handler.
+
+### `raw`
+
+The `raw` is a `RawTransaction` object.
+
+### `parsed`
+
+The `parsed` is a `ParsedFunctionCallTransaction<T>` object.
+
+### `constructor`
+
+The constructor is used to create a new transaction handler.

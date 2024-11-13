@@ -5,8 +5,9 @@ import {
   DefaultAddressInput,
   DefaultSelect,
 } from "./DefaultFormElements";
-import { ActionParser } from "../types";
+import { ActionHandler, ActionHandlerStatic } from "../types";
 import { TransactionParser } from "../utils/parser";
+import { CustomTransactionActionHandler } from "../actions/CustomTransaction";
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
@@ -21,7 +22,8 @@ type ContextValue = {
   etherscanApiKey: string;
   // maybe include this for viem?
   //   alchemyApiKey: string;
-  actions: (typeof ActionParser)[];
+  actions: (typeof ActionHandler)[];
+  chainId: number;
   parser: TransactionParser;
 };
 
@@ -29,7 +31,7 @@ const Context = createContext<ContextValue | null>(null);
 
 type Config = Partial<Omit<ContextValue, "etherscanApiKey" | "actions">> & {
   etherscanApiKey: string;
-  actions: (typeof ActionParser)[];
+  actions: ActionHandlerStatic[];
   chainId: number;
 };
 
@@ -51,7 +53,10 @@ export const GovKitProvider: React.FC<GovKitProviderProps> = ({
 
   const value = {
     ...DEFAULT_VALUES,
-    parser: new TransactionParser(config.chainId, config.actions),
+    parser: new TransactionParser(config.chainId, [
+      ...config.actions,
+      CustomTransactionActionHandler,
+    ]),
     ...config,
   };
 

@@ -4,6 +4,7 @@ import {
   RawTransaction,
   ParsedFunctionCallTransaction,
   ReadableTransaction,
+  Action,
 } from "../../types";
 import {
   CustomTransactionAction,
@@ -19,8 +20,6 @@ import {
 } from "viem";
 import { AbiFunction } from "viem";
 import { decodeCalldataWithSignature } from "../../utils/ethereum";
-import { OneTimePaymentActionConfig } from "../NounsOneTimePayment";
-import { TransactionParser } from "../../utils/parser";
 import { formatAbiParameter } from "abitype";
 import { FunctionCallCodeBlock } from "../../components/FunctionCallCodeBlock";
 
@@ -202,23 +201,16 @@ export class PayableFunctionCallTransactionHandler
   }
 }
 
-export class CustomTransactionActionHandler
-  implements
-    ActionHandler<
-      CustomTransactionAction,
-      FunctionCallTransaction | PayableFunctionCallTransaction
-    >
-{
+export class CustomTransactionActionHandler extends ActionHandler {
   static readonly type = "custom-transaction" as const;
   static readonly form = CustomTransactionForm;
   static readonly formdataToAction = dataToAction;
-  readonly action: CustomTransactionAction;
 
-  constructor(action: CustomTransactionAction) {
-    this.action = action;
+  constructor(action: Action) {
+    super(action);
   }
 
-  getTransactions() {
+  static getTransactions(): (typeof TransactionHandler<ReadableTransaction>)[] {
     return [
       FunctionCallTransactionHandler,
       PayableFunctionCallTransactionHandler,
@@ -258,33 +250,34 @@ export class CustomTransactionActionHandler
     ];
   }
 
-  build(r: ReadableTransaction[]) {
-    const parser = new TransactionParser(1, [OneTimePaymentActionConfig]);
-    // if (transactionsLeft.length === 0) return null;
-    let remainingTransactions = r;
-    const tx = remainingTransactions[0];
-    const { targets, signatures, calldatas, values } = parser.unparse([tx]);
-    remainingTransactions = remainingTransactions.slice(1);
-    const { name, inputs, inputTypes } = decodeCalldataWithSignature({
-      signature: signatures[0],
-      calldata: calldatas[0],
-    });
+  static build(r: ReadableTransaction[]) {
+    return null;
+    // const parser = new TransactionParser(this.chainId, this.siblingActions);
+    // // if (transactionsLeft.length === 0) return null;
+    // let remainingTransactions = r;
+    // const tx = remainingTransactions[0];
+    // const { targets, signatures, calldatas, values } = parser.unparse([tx]);
+    // remainingTransactions = remainingTransactions.slice(1);
+    // const { name, inputs, inputTypes } = decodeCalldataWithSignature({
+    //   signature: signatures[0],
+    //   calldata: calldatas[0],
+    // });
 
-    const signature = `${name}(${inputTypes
-      .map((t) => formatAbiParameter(t))
-      .join(",")})`;
+    // const signature = `${name}(${inputTypes
+    //   .map((t) => formatAbiParameter(t))
+    //   .join(",")})`;
 
-    return {
-      action: {
-        type: "custom-transaction",
-        target: targets[0],
-        contractCallTarget: targets[0],
-        contractCallSignature: signature,
-        contractCallArguments: inputs,
-        contractCallValue: Number(values[0]),
-      },
-      remainingTransactions,
-    };
+    // return {
+    //   action: {
+    //     type: "custom-transaction",
+    //     target: targets[0],
+    //     contractCallTarget: targets[0],
+    //     contractCallSignature: signature,
+    //     contractCallArguments: inputs,
+    //     contractCallValue: Number(values[0]),
+    //   },
+    //   remainingTransactions,
+    // };
   }
 
   summarize(a: CustomTransactionAction) {

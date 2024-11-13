@@ -66,10 +66,23 @@ export type ReadableTransaction =
 // Parser classes
 // ------------------------------------------------------------
 
-export class ActionHandler<A extends Action, T extends ReadableTransaction> {
+export interface ActionHandlerStatic {
+  readonly type: string;
+  readonly form: React.FC;
+  formdataToAction: (data: any) => Action;
+  getTransactions: () => (typeof TransactionHandler<ReadableTransaction>)[];
+  build: (r: any[]) => { action: Action; remainingTransactions: any[] } | null;
+  new (data: Action): ActionHandler;
+}
+
+export abstract class ActionHandler {
   static readonly type: string;
   static readonly form: React.FC;
-  static readonly action: Action;
+  readonly action: Action;
+
+  constructor(data: Action) {
+    this.action = data;
+  }
 
   static formdataToAction: (data: any) => Action;
   static getTransactions: () => (typeof TransactionHandler<ReadableTransaction>)[];
@@ -77,21 +90,19 @@ export class ActionHandler<A extends Action, T extends ReadableTransaction> {
     r: any[]
   ) => { action: Action; remainingTransactions: any[] } | null;
 
-  resolve(a: A): TransactionHandler<T>[] {
-    throw new Error("Not implemented");
-  }
-
-  summarize(a: A): JSX.Element {
-    throw new Error("Not implemented");
-  }
-
-  constructor(data: Action) {}
+  abstract resolve(a: Action): TransactionHandler<ReadableTransaction>[];
+  abstract summarize(a: Action): JSX.Element;
 }
 
 export abstract class TransactionHandler<T extends ReadableTransaction> {
   static readonly type: string;
   abstract readonly raw: RawTransaction;
   abstract readonly parsed: ParsedFunctionCallTransaction<T>;
+
+  constructor(
+    mode: "raw" | "parsed",
+    data: RawTransaction | ParsedFunctionCallTransaction<T>
+  ) {}
 
   static parse(
     rt: RawTransaction,
@@ -109,9 +120,4 @@ export abstract class TransactionHandler<T extends ReadableTransaction> {
 
   abstract codeBlock(): JSX.Element;
   abstract comment(): JSX.Element | undefined;
-
-  constructor(
-    mode: "raw" | "parsed",
-    data: RawTransaction | ParsedFunctionCallTransaction<T>
-  ) {}
 }

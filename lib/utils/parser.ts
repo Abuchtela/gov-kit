@@ -3,13 +3,13 @@ import {
   ReadableTransaction,
   RawTransaction,
   RawTransactions,
-  ActionHandler,
+  ActionHandlerStatic,
 } from "../types";
 
 export class TransactionParser {
   private readonly chainId: number;
-  private readonly globalActions: (typeof ActionHandler)[];
-  constructor(chainId: number, globalActions: (typeof ActionHandler)[]) {
+  private readonly globalActions: ActionHandlerStatic[];
+  constructor(chainId: number, globalActions: ActionHandlerStatic[]) {
     this.chainId = chainId;
     this.globalActions = globalActions;
   }
@@ -35,7 +35,13 @@ export class TransactionParser {
           )
       );
 
-      if (!possibleTransaction) throw new Error("No transaction found");
+      // As long as CustomTransactionHandler exists in globalActions
+      // it will always return a transaction...
+      if (!possibleTransaction)
+        throw new Error(
+          "No transaction found, you likely need to include CustomTransactionHandler in your globalActions."
+        );
+
       return possibleTransaction.parse(
         { target, signature, calldata, value },
         { chainId: this.chainId }
@@ -75,7 +81,10 @@ export class TransactionParser {
     const actionConfig = this.globalActions.find(
       (ga) => ga.type === action.type
     );
-    if (!actionConfig) throw new Error("No action config found");
+    if (!actionConfig)
+      throw new Error(
+        `Action: ${action.type} not found in globalActions. Please make sure you have included the action in your globalActions, or in the ProviderConfig.`
+      );
     const actionParserInstance = new actionConfig(action);
     return actionParserInstance.resolve(action);
   }

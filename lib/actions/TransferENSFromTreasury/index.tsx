@@ -5,6 +5,7 @@ import {
   ActionHandler,
   RawTransaction,
   ParsedFunctionCallTransaction,
+  Action,
 } from "../../types";
 import { TransferENSFromTreasuryAction, TransferENSTransaction } from "./types";
 import { FunctionCallCodeBlock } from "../../components/FunctionCallCodeBlock";
@@ -25,17 +26,13 @@ import TransferENSFromTreasuryForm, { dataToAction } from "./Form";
 // being able to generate the code block and comment for the transaction (shared by all instances)
 // -------------------------------------------------------------------------------------------------
 
-export class TransferENSFromTreasuryActionHandler
-  implements
-    ActionHandler<TransferENSFromTreasuryAction, TransferENSTransaction>
-{
+export class TransferENSFromTreasuryActionHandler extends ActionHandler {
   static readonly type = "transfer-ens-from-treasury" as const;
   static readonly form = TransferENSFromTreasuryForm;
   static readonly formdataToAction = dataToAction;
-  readonly action: TransferENSFromTreasuryAction;
 
-  constructor(action: TransferENSFromTreasuryAction) {
-    this.action = action;
+  constructor(action: Action) {
+    super(action);
   }
 
   static getTransactions(): (typeof TransactionHandler<ReadableTransaction>)[] {
@@ -66,18 +63,20 @@ export class TransferENSFromTreasuryActionHandler
 
     return null;
   }
+
   resolve(
     a: TransferENSFromTreasuryAction
   ): TransactionHandler<TransferENSTransaction>[] {
-    const transferTx = new TransferENSTransactionHandler("raw", {
+    const transferTx = new TransferENSTransactionHandler("parsed", {
       type: "transfer-ens",
-      target: a.receiver,
+      target: "0x323a76393544d5ecca80cd6ef2a560c6a395b7e3",
       value: parseEther(a.amount),
       receiver: a.receiver,
     });
 
     return [transferTx];
   }
+
   summarize(a: TransferENSFromTreasuryAction): JSX.Element {
     return (
       <>
@@ -100,14 +99,19 @@ export class TransferENSTransactionHandler
   ) {
     switch (mode) {
       case "raw":
-        this.raw = data as RawTransaction;
+        if ("type" in data) {
+          throw new Error("Invalid mode");
+        }
+        this.raw = data;
         this.parsed = TransferENSTransactionHandler.parse(
           this.raw
         ) as ParsedFunctionCallTransaction<TransferENSTransaction>;
         break;
       case "parsed":
-        this.parsed =
-          data as ParsedFunctionCallTransaction<TransferENSTransaction>;
+        if (!("type" in data)) {
+          throw new Error("Invalid mode");
+        }
+        this.parsed = data;
         this.raw = TransferENSTransactionHandler.unparse(this.parsed);
         break;
       default:
@@ -118,21 +122,20 @@ export class TransferENSTransactionHandler
   static parse(
     rt: RawTransaction
   ): ParsedFunctionCallTransaction<TransferENSTransaction> | false {
-    const {
-      name: functionName,
-      inputs: functionInputs,
-      inputTypes: functionInputTypes,
-    } = decodeCalldataWithSignature({
-      signature: rt.signature,
-      calldata: rt.calldata,
-    });
-
     if (
       rt.target.toLowerCase() ===
         "0x323a76393544d5ecca80cd6ef2a560c6a395b7e3".toLowerCase() &&
       normalizeSignature(rt.signature) ===
         normalizeSignature("transfer(address,uint256)")
     ) {
+      const {
+        name: functionName,
+        inputs: functionInputs,
+        inputTypes: functionInputTypes,
+      } = decodeCalldataWithSignature({
+        signature: rt.signature,
+        calldata: rt.calldata,
+      });
       const receiverAddress = functionInputs[0].toLowerCase();
 
       return {
@@ -151,7 +154,8 @@ export class TransferENSTransactionHandler
 
   static unparse(t: TransferENSTransaction): RawTransaction {
     return {
-      target: "0x323A76393544d5ecca80cd6ef2A560C6a395b7E3",
+      target:
+        "0x323a76393544d5ecca80cd6ef2a560c6a395b7e3".toLowerCase() as `0x${string}`,
       value: "0",
       signature: "transfer(address,uint256)",
       calldata: encodeAbiParameters(
